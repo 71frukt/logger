@@ -3,13 +3,21 @@
 
 #include <stdio.h>
 
-enum class LogType
+#include "stdlib.h"
+
+#define DEFAULT_LOGFILE_NAME  "LogFile.html"
+#define LOG_FOLDER            "logs"
+
+#define DEFAULT_TAB           "\t"
+
+enum LogType
 {
+    LOG,
     INFO,
     DUMP,
+    ASSERT,
     ERROR,
-    WARNING,
-    ASSERT
+    WARNING
 };
 
 FILE *OpenLog(const char *const logfile_name);
@@ -17,23 +25,20 @@ FILE *OpenLog(const char *const logfile_name);
 void  CloseLogFile();
 void  LogPrint(const char *const file, const int line, const char *const func, LogType log_type, const char *const format, ...);
 
-#define DEFAULT_LOGFILE_NAME  "LogFile.html"
-#define LOG_FOLDER            "logs"
 
+#ifdef USE_LOGS
 
-#define log(log_type, format, ...)  LogPrint(__FILE__, __LINE__, __func__, log_type, format, ##__VA_ARGS__)
-
-#define lassert(condition)                              \
+#define lassert(condition, fall_text)                   \
 do                                                       \
 {                                                         \
-    if (!condition, fall_text)                             \
+    if (!condition)                                        \
     {                                                       \
-        log(LogType::ASSERT, fall_text);                     \
+        log(ASSERT, fall_text);                              \
         abort();                                              \
     }                                                          \
 } while(0)
 
-#ifdef USE_LOGS
+#define log(log_type, format, ...)  LogPrint(__FILE__, __LINE__, __func__, log_type, format, ##__VA_ARGS__)
 
 #define ON_LOGS(...)  __VA_ARGS__
 
@@ -47,12 +52,14 @@ do                                                          \
     }                                                             \
                                                                    \
     else                                                            \
-    OpenLog(logfile_name "");                                        \
+        OpenLog(logfile_name "");                                    \
 } while(0)
 
 
 #else
-#define ON_LOGS(...)
+#define lassert(condition, fall_text)
+#define log(log_type, format, ...)
+#define ON_LOGS(...)  
 #define logctor(logfile_name)
 #endif
 

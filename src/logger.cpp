@@ -28,22 +28,8 @@ FILE *OpenLog(const char *const logfile_name)
                      "\t</div>                                                                                                                  \n"
                      "\t<pre>                                                                                                                   \n"
                      "\t<style>                                                                                                                 \n"
-                     "\tbody { background: linear-gradient(to right, #0f2027, #203a43, #2c5364);}                                         \n"
-                     "\tpre { color: #ffffff; }                                                                                               \n"
-                     "\t." HTML_RED     "{ color:" HTML_RED     ";}                                                                             \n"
-                     "\t." HTML_YELLOW  "{ color:" HTML_YELLOW  ";}                                                                             \n"
-                     "\t." HTML_BLUE    "{ color:" HTML_BLUE    ";}                                                                             \n"
-                     "\t." HTML_GREEN   "{ color:" HTML_GREEN   ";}                                                                             \n"
-                     "\t." HTML_CYAN    "{ color:" HTML_CYAN    ";}                                                                             \n"
-                     "\t." HTML_MAGENTA "{ color:" HTML_MAGENTA ";}                                                                             \n"
-                     "\t." HTML_SKYBLUE "{ color:" HTML_SKYBLUE ";}                                                                             \n"
-                     "\t.jumbotron {                                                                                                            \n"
-                     "\t   background: linear-gradient(to bottom, #ffffff,  #ffffff, #001aff, #001aff, #b00000, #b00000);           \n"
-                     "\t   color: white;                                                                                                        \n"
-                     "\t   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);                                                                          \n"
-                     "\t   border-radius: 0;                                                                                                    \n"
-                     "\t   margin-bottom: 0;                                                                                                    \n"
-                     "\t}                                                                                                                       \n"
+                     COLORS_HTML_PREAMBLE
+                     TABLE_HTML_COLOR
                      "\t</style>                                                                                                                \n"
                     , logfile_name, logfile_name);
 
@@ -59,65 +45,88 @@ void CloseLogFile()
                         "\t</body>      \n"
                         "</html>");
 
-    assert(fclose(LogFile) != 0 && "Error when closing LogFile");
+    assert(fclose(LogFile) == 0 && "Error when closing LogFile");
 }
+
+//     log(ERROR, "HASH_TABLE_VERIFY failed! Errors:\n %s\n", "ERROR_TEST!"); 
 
 void LogPrint(const char *const file, const int line, const char *const func, LogType log_type, const char *const format, ...)
 {   
-    va_list args;
-    va_start(args, format);
+    va_list args_console;
+    va_list args_file;
 
+    va_start(args_console, format);
+    va_start(args_file,    format);
+
+    ON_LOGS(fprintf(LogFile, DEFAULT_TAB));
 
     switch (log_type)
     {
-    case LogType::INFO:
+    case LOG:
         ON_LOGS(
-        fprintf(LogFile, format, args);
+        vfprintf(LogFile, format, args_file);
         );
         break;
         
-    case LogType::DUMP:
+    case INFO:
         ON_LOGS(
-        fprintf(LogFile, "\t" HTML_COLORED("Dumped", HTML_SKYBLUE)  " from "  HTML_COLORED("%s:%d(%s)", HTML_CYAN)   "\n", file, line, func);
-        fprintf(LogFile, format, args);
+        fprintf(LogFile, HTML_COLORED("info:\t", HTML_CYAN));
+        HtmlColoredFprint(LogFile, HTML_WHITE, format, args_file);
+        );
+
+        fprintf(stderr, CONSOLE_COLORED("info:\t", CONSOLE_CYAN));
+        ConsoleColoredFprint(CONSOLE_WHITE, format, args_console);
+        break;
+
+    case DUMP:
+        ON_LOGS(
+        fprintf(LogFile,  HTML_COLORED("Dumped", HTML_SKYBLUE)  " from "  HTML_COLORED("%s:%d (%s)\n", HTML_CYAN)   "\n", file, line, func);
+        HtmlColoredFprint(LogFile, HTML_SKYBLUE, format, args_file);
         );
         break;
         
-    case LogType::ASSERT:
+    case ASSERT:
         ON_LOGS(
-        fprintf(LogFile, "\t" HTML_COLORED("Assertation failed", HTML_MAGENTA) " in "    HTML_COLORED("%s:%d(%s)", HTML_CYAN)    "\n", file, line, func);
-        HTML_COLORED_FPRINT(LogFile, HTML_MAGENTA, format, args);
+        fprintf(LogFile, HTML_COLORED("Assertation failed", HTML_MAGENTA) " in " HTML_COLORED("%s:%d(%s)", HTML_CYAN) "\n", file, line, func);
+        HtmlColoredFprint(LogFile, HTML_MAGENTA, format, args_file);
         );
 
         fprintf(stderr, CONSOLE_COLORED("Assertation failed", CONSOLE_MAGENTA) " in " CONSOLE_COLORED("%s:%d(%s)", CONSOLE_CYAN) "\n", file, line, func);
-        CONSOLE_COLORED_FPRINT(CONSOLE_MAGENTA, format, args);
+        ConsoleColoredFprint(CONSOLE_MAGENTA, format, args_console);
         break;
         
-    case LogType::ERROR:
+    case ERROR:
         ON_LOGS(
-        fprintf(LogFile,"\t" HTML_COLORED("Error", HTML_RED)    " in "    HTML_COLORED("%s:%d(%s)", HTML_CYAN)    "\n", file, line, func);
-        HTML_COLORED_FPRINT(LogFile, HTML_RED, format, args);
+            fprintf(LogFile, HTML_COLORED("Error", HTML_RED) " in " HTML_COLORED("%s:%d(%s)", HTML_CYAN) "\n", file, line, func);
+            HtmlColoredFprint(LogFile, HTML_RED, format, args_file);
         );
-
-        fprintf(stderr,   CONSOLE_COLORED("Error", CONSOLE_RED) " in " CONSOLE_COLORED("%s:%d(%s)", CONSOLE_CYAN) "\n", file, line, func);
-        CONSOLE_COLORED_FPRINT(CONSOLE_RED, format, args);
+        
+        fprintf(stderr, CONSOLE_COLORED("Error", CONSOLE_RED) " in " CONSOLE_COLORED("%s:%d(%s)", CONSOLE_CYAN) "\n", file, line, func);
+        ConsoleColoredFprint(CONSOLE_RED, format, args_console);
         break;
 
-    case LogType::WARNING:
+    case WARNING:
         ON_LOGS(
-        fprintf(LogFile,"\t" HTML_COLORED("Warning", HTML_YELLOW)  " in "     HTML_COLORED("%s:%d(%s)", HTML_CYAN)    "\n", file, line, func);
-        HTML_COLORED_FPRINT(LogFile, HTML_YELLOW, format, args);
+        fprintf(LogFile, HTML_COLORED("Warning", HTML_YELLOW) " in " HTML_COLORED("%s:%d(%s)", HTML_CYAN) "\n", file, line, func);
+        HtmlColoredFprint(LogFile, HTML_YELLOW, format, args_file);
         );
 
-        fprintf(stderr,   CONSOLE_COLORED("Warning", CONSOLE_YELLOW) " in " CONSOLE_COLORED("%s:%d(%s)", CONSOLE_CYAN) "\n", file, line, func);
-        CONSOLE_COLORED_FPRINT(CONSOLE_YELLOW, format, args);
+        fprintf(stderr, CONSOLE_COLORED("Warning", CONSOLE_YELLOW) " in " CONSOLE_COLORED("%s:%d(%s)", CONSOLE_CYAN) "\n", file, line, func);
+        ConsoleColoredFprint(CONSOLE_YELLOW, format, args_console);
         break;
 
     default:
         break;
     }
 
-    fflush(LogFile);
+    if (log_type == ERROR || log_type == WARNING || log_type == ASSERT || log_type == INFO)
+    {
+        fprintf(stderr,  "\n");
+        fprintf(LogFile, "\n");
+    }
 
-    va_end(args);
+
+    fflush(LogFile);
+    va_end(args_console);
+    va_end(args_file);
 }
