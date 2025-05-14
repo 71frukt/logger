@@ -25,6 +25,9 @@ FILE *OpenLog(const char *const logfile_name, const char *const style_preamble);
 void  CloseLogFile();
 void  LogPrint(const char *const file, const int line, const char *const func, LogType log_type, const char *const format, ...);
 
+const size_t PATH_MAX_LEN = 100;
+const char *GetFileFullPath(const char *const file_name, const char *const path);           // ret string is static array!
+
 #define log(log_type, format, ...)  LogPrint(__FILE__, __LINE__, __func__, log_type, format, ##__VA_ARGS__)
 
 #ifdef USE_LOGS
@@ -32,7 +35,7 @@ void  LogPrint(const char *const file, const int line, const char *const func, L
 #define lassert(condition, fall_text)                           \
 do                                                              \
 {                                                               \
-    if (!(condition))                                             \
+    if (!(condition))                                           \
     {                                                           \
         log(ASSERT, fall_text);                                 \
         abort();                                                \

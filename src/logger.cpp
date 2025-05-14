@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -10,7 +11,7 @@ FILE *LogFile = NULL;
 
 FILE *OpenLog(const char *const logfile_name, const char *const style_preamble)
 {
-    LogFile = fopen(logfile_name, "w");
+    LogFile = fopen(GetFileFullPath(logfile_name, LOGS_FOLDER_NAME), "w");
 
     assert(LogFile && "Error when opening LogFile");
 
@@ -27,7 +28,6 @@ FILE *OpenLog(const char *const logfile_name, const char *const style_preamble)
                      "\t\t<h1>%s</h1>                                                                                                           \n"
                      "\t</div>                                                                                                                  \n"
                      "\t<pre>                                                                                                                   \n"
-                     "\t<style>                                                                                                                 \n"
                      "\t<style>                                                                                                                 \n"
                      "%s                                                                                                                        \n"
                      "\t</style>                                                                                                                \n"
@@ -133,4 +133,19 @@ void LogPrint(const char *const file, const int line, const char *const func, Lo
     fflush(LogFile);
     va_end(args_console);
     va_end(args_file);
+}
+
+const char *GetFileFullPath(const char *const file_name, const char *const path)
+{
+    static char full_path[PATH_MAX_LEN] = {};
+
+    size_t file_name_len = strlen(file_name);
+    size_t path_len      = strlen(path);
+
+    if (file_name_len + path_len >= PATH_MAX_LEN - 2)
+        log(ERROR, "PATH_MAX_LEN overflow");
+
+    snprintf(full_path, PATH_MAX_LEN, "%s/%s", path, file_name);
+
+    return full_path;
 }
