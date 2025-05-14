@@ -8,7 +8,7 @@
 
 FILE *LogFile = NULL;
 
-FILE *OpenLog(const char *const logfile_name)
+FILE *OpenLog(const char *const logfile_name, const char *const style_preamble)
 {
     LogFile = fopen(logfile_name, "w");
 
@@ -28,10 +28,10 @@ FILE *OpenLog(const char *const logfile_name)
                      "\t</div>                                                                                                                  \n"
                      "\t<pre>                                                                                                                   \n"
                      "\t<style>                                                                                                                 \n"
-                     COLORS_HTML_PREAMBLE
-                     TABLE_HTML_COLOR
+                     "\t<style>                                                                                                                 \n"
+                     "%s                                                                                                                        \n"
                      "\t</style>                                                                                                                \n"
-                    , logfile_name, logfile_name);
+                    , logfile_name, logfile_name, style_preamble);
 
 
     atexit(CloseLogFile);
@@ -52,6 +52,10 @@ void CloseLogFile()
 
 void LogPrint(const char *const file, const int line, const char *const func, LogType log_type, const char *const format, ...)
 {   
+    assert(file);
+    assert(func);
+    assert(format);
+
     va_list args_console;
     va_list args_file;
 
